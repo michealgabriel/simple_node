@@ -21,13 +21,20 @@ jobs:
     steps:
       - checkout
       - run:
-        name: "Docker Operation"
-        command: |
-          docker build -t simple_node_app .
-          docker tag simple_node_app michealgabriel/simple_node_app
-      - deploy: |
-          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-          docker push michealgabriel/simple_node_app
+        name: "Docker Build"
+        command: "docker build -t simple_node_app ."
+      - run:
+        name: "Docker Tag"
+        command: "docker tag simple_node_app michealgabriel/simple_node_app"
+      - run: 
+        name: "Docker Login"
+        run: "docker login -u ${DOCKER_USERNAME}"
+      - run: 
+        name: "Docker Passcode"
+        run: "echo ${DOCKER_PASSWORD}"
+      - run: 
+        name: "Docker Push"
+        run: "docker push michealgabriel/simple_node_app"
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
