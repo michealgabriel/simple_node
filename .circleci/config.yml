@@ -21,7 +21,7 @@ jobs:
     steps:
       - checkout
       - run:
-        name: "Docker Build BRO"
+        name: "Docker Build"
         command: "docker build -t simple_node_app ."
       - run:
         name: "Docker Tag"
