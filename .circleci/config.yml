@@ -1,32 +1,63 @@
+# orbs:
+#   docker: circleci/docker@1.5.0
+# version: 2.1
+# executors:
+#   docker-publisher: 
+#   environment:
+#   IMAGE_NAME: michealgabriel/simple_node
+#   docker: # Each job requires specifying an executor
+#   # (either docker, macos, or machine), see
+#   — image: circleci/node:latest
+#   auth:
+#   username: $DOCKERHUB_USERNAME
+#   password: $DOCKERHUB_PASSWORD
+# jobs:
+#   publishLatestToHub: 
+#   executor: docker-publisher
 
-orbs:
-  docker: circleci/docker@1.5.0
-version: 2.1
-executors:
-  docker-publisher: 
-  environment:
-  IMAGE_NAME: michealgabriel/simple_node
-  docker: # Each job requires specifying an executor
-  # (either docker, macos, or machine), see
-  — image: circleci/node:latest
-  auth:
-  username: $DOCKERHUB_USERNAME
-  password: $DOCKERHUB_PASSWORD
-jobs:
-  publishLatestToHub: 
-  executor: docker-publisher
+#   steps: 
+#     — checkout
+#     — setup_remote_docker
+#   — run: 
+#   name: Publish Docker Image to Docker Hub
+#   command: |
+#     echo “$DOCKERHUB_PASSWORD” | docker login -u “$DOCKERHUB_USERNAME” — password-stdin
+#     docker build -t simple_node .
+#     docker push simple_node:circleci
+# workflows:
+#   version: 2
+#   build-master:
+#   jobs:
+#     — publishLatestToHub
 
-  steps: 
-    — checkout
-    — setup_remote_docker
-  — run: 
-  name: Publish Docker Image to Docker Hub
-  command: |
-    echo “$DOCKERHUB_PASSWORD” | docker login -u “$DOCKERHUB_USERNAME” — password-stdin
-    docker build -t simple_node .
-    docker push simple_node:circleci
-workflows:
-  version: 2
-  build-master:
+
+version: 2
   jobs:
-    — publishLatestToHub
+    build:
+      branches:
+        only:
+          - circleci-project-setup
+        docker:
+          # specify the version you desire here
+          - image: circleci/node:16
+          - image: docker:17.09.1-ce-git  # enable the docker build support
+       working_directory: ~/repo
+         steps:
+           - checkout
+           - setup_remote_docker
+    
+          # build the docker image on success
+          - run:
+            name: Build Docker Images
+            when: on_success
+            command: |
+              docker --version
+              docker login -u=$DOCKERHUB_USERNAME -p=$DOCKERHUB_PASSWORD
+              docker build -t michealgabriel/simple_node:$CIRCLE_BRANCH --build-arg MACHINE_NAME=simple_node-$CIRCLE_BRANCH .
+              docker push michealgabriel/simple_node:$CIRCLE_BRANCH
+              echo "Docker build made sucessfully!! for simple_node $CIRCLE_BRANCH"
+          - run:
+            name: Build Failure
+            when: on_fail
+            command: |
+              echo "ERROR building simple_node $CIRCLE_BRANCH"
