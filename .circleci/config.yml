@@ -31,33 +31,39 @@
 #     — publishLatestToHub
 
 
-version: 2
-  jobs:
-    build:
-      branches:
-        only:
-          - circleci-project-setup
-        docker:
-          # specify the version you desire here
-          - image: circleci/node:16
-          - image: docker:17.09.1-ce-git  # enable the docker build support
-       working_directory: ~/repo
-         steps:
-           - checkout
-           - setup_remote_docker
-    
-          # build the docker image on success
-          - run:
-            name: Build Docker Images
-            when: on_success
-            command: |
-              docker --version
-              docker login -u=$DOCKERHUB_USERNAME -p=$DOCKERHUB_PASSWORD
-              docker build -t michealgabriel/simple_node:$CIRCLE_BRANCH --build-arg MACHINE_NAME=simple_node-$CIRCLE_BRANCH .
-              docker push michealgabriel/simple_node:$CIRCLE_BRANCH
-              echo "Docker build made sucessfully!! for simple_node $CIRCLE_BRANCH"
-          - run:
-            name: Build Failure
-            when: on_fail
-            command: |
-              echo "ERROR building simple_node $CIRCLE_BRANCH"
+version: 2  # Version of CircleCI
+jobs:
+  build:
+    docker:
+      - image: node:16
+    steps:
+      - checkout
+
+			# Creates a remote Docker environment configured to execute Docker commands.
+      - setup_remote_docker 
+       
+      - run:
+        # installs a docker client that will be used to run the docker commands
+          name: Install Docker client
+          command: |
+            set -x
+            VER="17.03.0-ce"
+            curl -L -o /tmp/docker-$VER.tgz https://get.docker.com/builds/Linux/x86_64/docker-$VER.tgz
+            tar -xz -C /tmp -f /tmp/docker-$VER.tgz
+            mv /tmp/docker/* /usr/bin
+      - run:
+         # Builds a docker image to push to Docker Hub
+				 # Tag (-t) pattern is below, where CircleCI 
+				 # to get the Dockerfile from the current directory.
+         # <docker_hub_username/docker-hub-password:version>.
+          name: Build Docker image
+          command: docker build -t michealgabriel/simple_node:v1 .
+
+      - run:
+        # Pushes the Docker image you created to the Docker Hub.
+        # Replace khabdrick/circleci-tutorial:v1 with the 
+				# <docker_hub_username/docker-hub-password:version> you used to build the image above
+          name: Push to Docker Hub
+          command: |
+            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+            docker push michealgabriel/simple_node:v1
